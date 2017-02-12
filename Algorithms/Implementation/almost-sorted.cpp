@@ -5,73 +5,92 @@
 
 struct action {
     bool is_r;
-    unsigned int start, end;
+    size_t start, end;
 };
 
+static bool swappable(const std::vector<size_t>& elements, size_t i, size_t j);
+static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n);
+
+// static bool descending(const std::vector<size_t>& elements, size_t i) {
+//
+// }
+
+static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n);
+
 int main(void) {
-    
-    unsigned int n;
+
+    size_t n;
     std::cin >> n;
-    
-    std::vector<unsigned int> elements(n);
-    
-    for (auto& _e : elements)
+
+    std::vector<size_t> elements(n);
+
+	bool sorted = true; size_t last = 0;
+    for (auto& _e : elements) {
         std::cin >> _e;
-    
-    std::vector<bool> descending_to( n , false ), out_of_place(n, false);
-    
-    for (unsigned int i = 0; i < n-1; ++i) {
-        descending_to[ i ] = elements[ i ] > elements[ i + 1 ];
-        out_of_place [ i ] = descending_to[i] || i > 0 && elements[i-1] > elements[i];
-    }
-    
-    bool reverse_necessary = false;    
-    unsigned int count_instances_of_decreasing = 0;
-    
+		sorted = sorted && _e >= last;
+		last = _e;
+	}
+
     std::vector<action> actions;
-    
-    for (unsigned int i = 0, j; i < n-1; ++i) {
-        
-        if (!descending_to[i])
-            continue;
-        
-        //std::cout << "i = " << i;
-        ++count_instances_of_decreasing;
-        
-        for (j = i+1; j < n && descending_to[j]; ++j);
-        
-        reverse_necessary = reverse_necessary || (j - i) > 1;
-        
-        if (j < n-1 && elements[i] > elements[j+1]) // checks if swap/reverse would still leave the list unsorted.
-            ++count_instances_of_decreasing;
-        
-        actions.push_back({reverse_necessary, i, j});
-        
-        i = j;
-    }
-    
-    for (unsigned int i = 0, j; i < n; ++i) {
-        if (!descending_to[i]) continue;
-        for (j = n-1; j > i && out_of_place[j]; --j);
-        if (j > i+1 && j != n) {
-            actions.push_back({false, i, j});
-            ++count_instances_of_decreasing;
-        }
-    }
 
-    for (auto& a : actions)
-        std::cout << (a.is_r ? "reverse" : "swap") << " " << a.start+1 << " " << a.end+1 << '\n';
-    
-    if (count_instances_of_decreasing <= 1) {
-        std::cout << "yes\n";
+	do_reverse_check(elements, actions, n);
 
-        if (count_instances_of_decreasing == 1) {
+	if (actions.empty())
+		do_swap_check(elements, actions, n);
+
+    if (sorted || actions.size() == 1) {
+
+		std::cout << "yes\n";
+
+        if (actions.size() == 1) {
             action a = actions.front();
             std::cout << (a.is_r ? "reverse" : "swap") << " " << a.start+1 << " " << a.end+1 << '\n';
         }
     } else {
         std::cout << "no\n";
     }
-    
+
     return 0;
+}
+
+static bool swappable(const std::vector<size_t>& elements, size_t i, size_t j) {
+	if (i > j)
+		std::swap(i,j);
+	if (i >= elements.size() || j >= elements.size())
+		return false;
+
+	bool res = i < elements.size()-1 && elements[i] > elements[i+1]
+	           && (j > 0 && elements[j] < elements[j-1]);
+
+	if (!res) return res;
+
+	res = res && elements[i] > elements[j]
+	          && (j == elements.size()-1 || elements[i] < elements[j+1])
+			  && elements[i] >= elements[j-1]
+	          && (i == 0 || elements[j] > elements[i-1])
+			  && elements[j] <= elements[i+1];
+
+	return res;
+}
+
+static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n) {
+	for (size_t i = 0, m = n-1, j; i < m; ++i)
+		for (j = i+1; j < n; ++j)
+			if (swappable(elements, i, j))
+				actions.push_back({false, i, j});
+}
+
+static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n) {
+	static auto get_end_of_decline = [&elements, &n](size_t i){
+		for (; i < n-1 && elements[i] > elements[i+1]; ++i);
+		return i;
+	};
+
+	for (size_t i = 0, j; i < n && actions.empty(); ++i) {
+		j = get_end_of_decline(i);
+		if (j > i+1) {
+			actions.push_back({true, i, j});
+			i = j;
+		}
+	}
 }
