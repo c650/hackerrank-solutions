@@ -1,5 +1,6 @@
 // Not yet working.
 #include <vector>
+#include <algorithm>
 #include <queue>
 #include <iostream>
 
@@ -10,10 +11,6 @@ struct action {
 
 static bool swappable(const std::vector<size_t>& elements, size_t i, size_t j);
 static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n);
-
-// static bool descending(const std::vector<size_t>& elements, size_t i) {
-//
-// }
 
 static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n);
 
@@ -31,6 +28,11 @@ int main(void) {
 		last = _e;
 	}
 
+	if (sorted) {
+		std::cout << "yes\n";
+		return 0;
+	}
+
     std::vector<action> actions;
 
 	do_reverse_check(elements, actions, n);
@@ -38,7 +40,7 @@ int main(void) {
 	if (actions.empty())
 		do_swap_check(elements, actions, n);
 
-    if (sorted || actions.size() == 1) {
+    if (actions.size() == 1) {
 
 		std::cout << "yes\n";
 
@@ -74,10 +76,24 @@ static bool swappable(const std::vector<size_t>& elements, size_t i, size_t j) {
 }
 
 static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n) {
+	
+	std::vector<size_t> sorted_elements(elements);
+	std::sort(sorted_elements.begin(),sorted_elements.end());
+
+	for ( size_t i = 0,j, m = n-1 ; i < m ; ++i ) {
+		if (elements[i] != sorted_elements[i]) {
+			for ( j = i+1; j < n; ++j)
+				if (swappable(elements,i,j))
+					actions.push_back({false,i,j});
+		}
+	}
+
+/*
 	for (size_t i = 0, m = n-1, j; i < m; ++i)
 		for (j = i+1; j < n; ++j)
 			if (swappable(elements, i, j))
 				actions.push_back({false, i, j});
+*/
 }
 
 static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n) {
