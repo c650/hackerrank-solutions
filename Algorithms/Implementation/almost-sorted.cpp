@@ -1,4 +1,7 @@
-// Not yet working.
+/*
+	almost-sorted.cpp
+	finally working...
+*/
 #include <vector>
 #include <algorithm>
 #include <queue>
@@ -13,6 +16,8 @@ static bool swappable(const std::vector<size_t>& elements, size_t i, size_t j);
 static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n, const std::vector<size_t>& sorted_elements);
 
 static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n, const std::vector<size_t>& sorted_elements);
+
+static bool make_sure(std::vector<size_t>& elements , const std::vector<size_t>& sorted_elements, action a);
 
 int main(void) {
 
@@ -42,7 +47,7 @@ int main(void) {
 	if (actions.empty())
 		do_swap_check(elements, actions, n, sorted_elements);
 
-    if (actions.size() == 1) {
+    if (actions.size() == 1 && make_sure(elements, sorted_elements, actions.front())) {
 
 		std::cout << "yes\n";
 
@@ -84,14 +89,9 @@ static void do_swap_check(const std::vector<size_t>& elements, std::vector<actio
 			for ( j = i+1; j < n ; ++j)
 				if (swappable(elements,i,j))
 					actions.push_back({false,i,j});
-			// for (j = i+1; j < n && actions.size() <= 2; ++j)
-			// 	if (elements[i] == sorted_elements[j])
-			// 		actions.push_back({false,i,j});
 		}
 	}
 }
-
-static bool find_in_bet(const std::vector<size_t>& sorted_elements, size_t min, size_t max);
 
 static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n, const std::vector<size_t>& sorted_elements) {
 	static auto get_end_of_decline = [&elements, &n](size_t i){
@@ -103,36 +103,19 @@ static void do_reverse_check(const std::vector<size_t>& elements, std::vector<ac
 		j = get_end_of_decline(i);
 		if (j > i+1) {
 			actions.push_back({true, i, j});
-			// std::cout << "Can reverse from " << i+1 << " to " << j+1 << "\n\t";
-			// while (i <= j) {
-			// 	std::cout << elements[i++] << ' ';
-			// 	if ((j-i) % 9 == 0)
-			// 		std::cout << "\n\t";
-			// }
-			// std::cout << '\n';
-
-			if (i > 0 && find_in_bet(sorted_elements, elements[j], elements[i-1]))
-				actions.push_back({false, j, i-1});
-
-			if (j < elements.size()-1 && find_in_bet(sorted_elements, elements[i], elements[j+1]))
-				actions.push_back({false, i, j+1});
-
 			i = j;
 		}
 	}
 }
 
-static bool find_in_bet(const std::vector<size_t>& sorted_elements, size_t min, size_t max) {
-	size_t start = 0, end = sorted_elements.size(), mid;
-	while (start < end) {
-		mid = (end+start)/2;
-		if (sorted_elements[mid] <= min) {
-			start = mid + 1;
-		} else if (sorted_elements[mid] < max) {
-			return true;
-		} else {
-			end = mid;
-		}
+static bool make_sure(std::vector<size_t>& elements , const std::vector<size_t>& sorted_elements, action a) {
+	if (a.is_r) {
+		std::reverse(elements.begin() + a.start, elements.begin() + a.end + 1);
+	} else {
+		std::swap(elements[a.start], elements[a.end]);
 	}
-	return false;
+	for (size_t i = 0; i < elements.size(); ++i)
+		if (sorted_elements[i] != elements[i])
+			return false;
+	return true;
 }
