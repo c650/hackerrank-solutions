@@ -36,7 +36,6 @@ int main(void) {
     std::vector<action> actions;
 
 	do_reverse_check(elements, actions, n);
-
 	if (actions.empty())
 		do_swap_check(elements, actions, n);
 
@@ -87,13 +86,6 @@ static void do_swap_check(const std::vector<size_t>& elements, std::vector<actio
 					actions.push_back({false,i,j});
 		}
 	}
-
-/*
-	for (size_t i = 0, m = n-1, j; i < m; ++i)
-		for (j = i+1; j < n; ++j)
-			if (swappable(elements, i, j))
-				actions.push_back({false, i, j});
-*/
 }
 
 static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n) {
