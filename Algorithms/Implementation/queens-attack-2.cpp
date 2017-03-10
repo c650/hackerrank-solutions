@@ -5,59 +5,107 @@
 #include <iostream>
 #include <utility>
 
+struct Point {
+	int x,y;
+};
+
+static void print(const Point& p) {
+	std::cout << "( " << p.x << " , " << p.y << " )\n";
+}
+
 int main() {
-    size_t n,k;
+    int n,k;
     std::cin >> n >> k;
 
-    std::vector<std::vector<bool>> grid(n, std::vector<bool>(n, true));
+	Point queen;
+	std::cin >> queen.x >> queen.y;
 
-    std::pair<size_t, size_t> queen, tmp;
+	Point upper{queen.x, n},
+	      lower{queen.x, 1},
+	      left{1, queen.y},
+	      right{n, queen.y},
+	      upper_right{n - std::max(0, queen.y - queen.x), n - std::max(0, queen.x - queen.y)},
+	      upper_left{1 + std::max(0, queen.x - queen.y), n - std::max(0, queen.y - queen.x)},
+	      lower_right{n - std::max(0, queen.y - queen.x), 1 + std::max(0, queen.x - queen.y)},
+	      lower_left{1 + std::max(0, queen.x - queen.y), 1 + std::max(0, queen.y - queen.x)};
 
-    std::cin >> queen.first >> queen.second;
-    --queen.first; --queen.second;
+	Point tmp;
+	int diff_x, diff_y;
+	while (k --> 0) {
+		std::cin >> tmp.x >> tmp.y;
+		diff_x = std::abs(tmp.x - queen.x);
+		diff_y = std::abs(tmp.y - queen.y);
 
-    while(k-->0) {
-        std::cin >> tmp.first >> tmp.second;
-        grid[tmp.first-1][tmp.second-1] = false;
-    }
-
-    int count = 0, i, j;
-
-    // upper left
-    for (i = queen.first-1, j = queen.second-1; i >= 0 && j >= 0 && grid[i][j]; --i, --j) {
-		++count;
+		if (!diff_x) {           /* mutual-exclusion w/ next `else if` guaranteed in problem statement */
+			if (queen.y < tmp.y && tmp.y < upper.y) { /* is above and closer than prev best upper... */
+				--tmp.y;
+				upper = tmp;
+			} else if (tmp.y > lower.y) { /* is below and closer than prev best lower */
+				++tmp.y;
+				lower = tmp;
+			}
+		} else if (!diff_y) {
+			if (queen.x < tmp.x && tmp.x < right.x) {/* is to the right and closer than prev best right*/
+				--tmp.x;
+				right = tmp;
+			} else if (tmp.x > left.x) { /* is to the left and closer than prev best left.*/
+				++tmp.x;
+				left = tmp;
+			}
+		} else if (diff_x == diff_y) {
+			if (queen.y < tmp.y) { /* the tmp point is above the queen.*/
+				if (queen.x < tmp.x && tmp.y <= upper_right.y) { /* tmp is to the right and above the queen, and better than prev upper_right. */
+					--tmp.x; --tmp.y;
+					upper_right = tmp;
+				} else if (tmp.y <= upper_left.y) { /* tmp is left, above, and better than prev upper_left */
+					++tmp.x; --tmp.y;
+					upper_left = tmp;
+				}
+			} else { /* below the queen */
+				if (queen.x < tmp.x && tmp.y >= lower_right.y) { /* tmp is right and below queen, better than prev lower_right*/
+					--tmp.x; ++tmp.y;
+					lower_right = tmp;
+				} else if (tmp.y >= lower_left.y) { /* left, below, better than prev lower_left */
+					++tmp.x; ++tmp.y;
+					lower_left = tmp;
+				}
+			}
+		}
 	}
 
-    // upper right
-    for (i = queen.first-1, j = queen.second+1; i >= 0 && j < n && grid[i][j]; --i, ++j) {
-        ++count;
-	}
-    // lower left
-    for (i = queen.first+1, j = queen.second-1; i < n && j >= 0 && grid[i][j]; ++i, --j) {
-        ++count;
-	}
-    // lower right
-    for (i = queen.first+1, j = queen.second+1; i < n && j < n && grid[i][j]; ++i, ++j) {
-        ++count;
-	}
-    // up
-    for (i = queen.first-1, j = queen.second; i >= 0 && grid[i][j]; --i) {
-        ++count;
-	}
-    // down
-    for (i = queen.first+1, j = queen.second; i < n && grid[i][j]; ++i) {
-        ++count;
-	}
-    // left
-    for (i = queen.first, j = queen.second-1; j >= 0 && grid[i][j]; --j) {
-        ++count;
-	}
-    // right
-    for (i = queen.first, j = queen.second+1; j < n && grid[i][j]; ++j) {
-        ++count;
+	/* handle corner cases */
+	if (queen.x == 1) {
+		lower_left = left = upper_left = queen;
+	} else if (queen.x == n) {
+		lower_right = right = upper_right = queen;
+	} else if (queen.y == 1) {
+		lower_left = lower = lower_right = queen;
+	} else if (queen.y == n) {
+		upper_left = upper = upper_right = queen;
 	}
 
-    std::cout << count << '\n';
+	print(upper);
+	print(lower);
+	print(right);
+	print(left);
+	print(upper_right);
+	print(lower_right);
+	print(upper_left);
+	print(lower_left);
+
+	int count = 0;
+	count += upper.y - queen.y + queen.y - lower.y;
+	std::cout << count << '\n';
+
+	count += queen.x - left.x + right.x - queen.x;
+	std::cout << count << '\n';
+
+	count += upper_left.y + upper_right.y - 2*queen.y;
+	std::cout << count << '\n';
+
+	count += 2*queen.y - lower_left.y - lower_right.y;
+
+	std::cout << count << '\n';
 
     return 0;
 }
