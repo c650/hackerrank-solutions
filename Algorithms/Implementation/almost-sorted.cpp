@@ -1,4 +1,7 @@
-// Not yet working.
+/*
+	almost-sorted.cpp
+	finally working...
+*/
 #include <vector>
 #include <algorithm>
 #include <queue>
@@ -10,9 +13,11 @@ struct action {
 };
 
 static bool swappable(const std::vector<size_t>& elements, size_t i, size_t j);
-static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n);
+static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n, const std::vector<size_t>& sorted_elements);
 
-static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n);
+static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n, const std::vector<size_t>& sorted_elements);
+
+static bool make_sure(std::vector<size_t>& elements , const std::vector<size_t>& sorted_elements, action a);
 
 int main(void) {
 
@@ -35,11 +40,14 @@ int main(void) {
 
     std::vector<action> actions;
 
-	do_reverse_check(elements, actions, n);
-	if (actions.empty())
-		do_swap_check(elements, actions, n);
+	std::vector<size_t> sorted_elements(elements);
+	std::sort(sorted_elements.begin(),sorted_elements.end());
 
-    if (actions.size() == 1) {
+	do_reverse_check(elements, actions, n, sorted_elements);
+	if (actions.empty())
+		do_swap_check(elements, actions, n, sorted_elements);
+
+    if (actions.size() == 1 && make_sure(elements, sorted_elements, actions.front())) {
 
 		std::cout << "yes\n";
 
@@ -74,21 +82,18 @@ static bool swappable(const std::vector<size_t>& elements, size_t i, size_t j) {
 	return res;
 }
 
-static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n) {
-	
-	std::vector<size_t> sorted_elements(elements);
-	std::sort(sorted_elements.begin(),sorted_elements.end());
+static void do_swap_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n, const std::vector<size_t>& sorted_elements) {
 
 	for ( size_t i = 0,j, m = n-1 ; i < m ; ++i ) {
 		if (elements[i] != sorted_elements[i]) {
-			for ( j = i+1; j < n; ++j)
+			for ( j = i+1; j < n ; ++j)
 				if (swappable(elements,i,j))
 					actions.push_back({false,i,j});
 		}
 	}
 }
 
-static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n) {
+static void do_reverse_check(const std::vector<size_t>& elements, std::vector<action>& actions, size_t n, const std::vector<size_t>& sorted_elements) {
 	static auto get_end_of_decline = [&elements, &n](size_t i){
 		for (; i < n-1 && elements[i] > elements[i+1]; ++i);
 		return i;
@@ -101,4 +106,16 @@ static void do_reverse_check(const std::vector<size_t>& elements, std::vector<ac
 			i = j;
 		}
 	}
+}
+
+static bool make_sure(std::vector<size_t>& elements , const std::vector<size_t>& sorted_elements, action a) {
+	if (a.is_r) {
+		std::reverse(elements.begin() + a.start, elements.begin() + a.end + 1);
+	} else {
+		std::swap(elements[a.start], elements[a.end]);
+	}
+	for (size_t i = 0; i < elements.size(); ++i)
+		if (sorted_elements[i] != elements[i])
+			return false;
+	return true;
 }
