@@ -2,7 +2,7 @@
 #include <iostream>
 #include <algorithm>
 
-// currently gets 35 pts.
+// getting 38.50 pts
 
 typedef std::vector<std::vector<int>> adj_mat;
 
@@ -19,6 +19,12 @@ int main() {
         --a; --b;
         adj[a].push_back(b);
         adj[b].push_back(a);
+    }
+    
+    for (auto& v : adj) {
+        std::sort(v.begin(), v.end(), [&adj](const int& a, const int& b){
+            return adj[a].size() < adj[b].size();
+        });
     }
     
     std::vector<bool> visited(adj.size(), false);
