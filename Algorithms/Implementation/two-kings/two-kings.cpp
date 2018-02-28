@@ -5,12 +5,11 @@ typedef std::pair<int,int> ipair;
 const int BOARD_LEN = 8;
 
 std::vector<ipair> best;
-std::vector<ipair> offset = {
-    {-1,0},{-1,-1},{-1,1},{0,-1},{0,1},{1,-1},{1,0},{1,1}
-};
 
 std::vector<ipair> curr; // for `go`
 std::vector<std::vector<char>> board(BOARD_LEN);
+
+std::vector<ipair> pos; // all possible positions.
 
 static inline bool valid_point(const ipair& p) {
     return p.first >= 0 && p.first < BOARD_LEN && p.second >= 0 && p.second < BOARD_LEN;
@@ -31,6 +30,9 @@ static bool check(const ipair& king, const ipair& other) {
 
 	board[other.first][other.second] = 'k';
 	can_move[other.first][other.second] = false; /* cant sit on the other king */
+
+	for (const auto& queen : curr)
+		board[queen.first][queen.second] = 'q';
 
     // fill out queen strike zones
     for (const auto& queen : curr) {
@@ -92,90 +94,77 @@ static bool check(const ipair& king, const ipair& other) {
         }
     }
 
-    /*std::printf("Trying this board\n");
-    for (const auto& r : board) {
-        for (const auto& c : r)
-            std::putchar(c);
-        std::putchar('\n');
-    }*/
-
     bool good = true;
 
 	for (int i = -1; i <= 1 && good; ++i) {
 		for (int j = -1; j <= 1 && good; ++j) {
 			if (valid_point({king.first+i,king.second+j})) {
 				good = good && !can_move[king.first+i][king.second+j];
-				if (can_move[king.first+i][king.second+j]) {
-					//std::printf("King (%d,%d) can move to (%d,%d)\n",king.first,king.second,king.first+i, king.second+j);
-				}
 			}
-			//&& (board[king.first+i][king.second+i] != 'k' || i == 0 && j == 0);
 		}
 	}
 
 	board[other.first][other.second] = '*';
+	for (const auto& queen : curr)
+		board[queen.first][queen.second] = '*';
 
     return good;
 }
 
-static void go(const int& k, const std::vector<ipair>& kings) {
-    if (curr.size() > 4) return;
-
-    if (k >= offset.size() * 2) {
-        if (check(kings.front(),kings.back()) && check(kings.back(),kings.front())) {
-            if (best.size() > curr.size())
-                best = curr;
-        }
-        return;
-    }
-
-    // skip
-    go(k+1, kings);
-
-    // do
-    ipair init = kings[k/offset.size()];
-    init.first += offset[k % offset.size()].first;
-    init.second += offset[k % offset.size()].second;
-
-    if (valid(init) && init != kings.front() && init != kings.back()) {
-        curr.push_back(init);
-        board[init.first][init.second] = 'q';
-
-        go(k+1, kings);
-
-        curr.pop_back();
-        board[init.first][init.second] = '*';
-    }
-}
-
-static void one_case(const bool& new_line) {
+static void one_case(const int& case_num) {
     std::vector<ipair> kings(2);
     for (auto& k : kings) {
         std::scanf("%d %d",&k.first,&k.second);
-        // board[k.first][k.second] = 'k';
     }
 
-    best.assign(10, {0,0});
-    go(0, kings);
+    best.resize(10);
 
-    if (best.size() == 10) {
-        throw std::runtime_error("this shouldnt happen lol");
-    }
+	curr.resize(2);
+	for (int i = 0; i < pos.size(); ++i) {
 
-	// std::printf("\nTest case: %d %d %d %d\n", kings.front().first,kings.front().second, kings.back().first,kings.back().second);
+		curr[0] = pos[i];
+		if (!valid(curr[0]) || curr[0] == kings.front() || curr[0] == kings.back()) continue;
 
-    std::printf("%d%s",static_cast<int>(best.size()), new_line ? "\n":"");
-    for (const auto& q : best) {
-        std::printf("Q %d %d\n",q.first,q.second);
-    }
+		for (int j = i+1; j < pos.size(); ++j) {
 
-    /*curr = best;
-    check(kings);
-    for (const auto& r : board) {
-        for (const auto& c : r)
-            std::putchar(c);
-        std::putchar('\n');
-    }*/
+			curr[1] = pos[j];
+			if (!valid(curr[1]) || curr[1] == kings.front() || curr[1] == kings.back()) continue;
+
+			if (check(kings.front(),kings.back()) && check(kings.back(),kings.front()) && curr.size() < best.size()) {
+				best = curr;
+			}
+
+			curr.push_back({0,0});
+			for (int k = j+1; k < pos.size(); ++k) {
+
+				curr[2] = pos[k];
+				if (!valid(curr[2]) || curr[2] == kings.front() || curr[2] == kings.back()) continue;
+
+				if (check(kings.front(),kings.back()) && check(kings.back(),kings.front()) && curr.size() < best.size()) {
+					best = curr;
+				}
+			}
+			curr.pop_back();
+		}
+	}
+
+	// std::printf("tc #%d: %d %d %d %d\n", case_num, kings.front().first,kings.front().second,kings.back().first,kings.back().second);
+	std::printf("%d\n", static_cast<int>(best.size()));
+	for (const auto& q : best) {
+		std::printf("Q %d %d\n", q.first,q.second);
+		board[q.first][q.second] = 'q';
+	}
+
+	// for (const auto& k : kings) {
+    //     board[k.first][k.second] = 'k';
+    // }
+
+	// for (const auto& r : board) {
+	// 	for (const auto& c : r) {
+	// 		std::putchar(c);
+	// 	}
+	// 	std::putchar('\n');
+	// }
 
     for (const auto& k : kings) {
         board[k.first][k.second] = '*';
@@ -185,8 +174,14 @@ static void one_case(const bool& new_line) {
 int main(void) {
     board.assign(BOARD_LEN, std::vector<char>(BOARD_LEN, '*'));
 
+	for (int i = 0; i < BOARD_LEN; ++i) {
+		for (int j = 0; j < BOARD_LEN; ++j) {
+			pos.push_back({i,j});
+		}
+	}
+
     int n;
     std::scanf("%d",&n);
-    while(n--) one_case(true);
+    for (int i = 1; i <= n; ++i) one_case(i);
     return 0;
 }
